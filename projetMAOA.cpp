@@ -18,20 +18,26 @@ typedef IloArray<IloNumVarArray> NumVarMatrix;
 
 ILOSTLBEGIN
 
-int main()
-{
+float solveLSPHeuristicPart1(vector<vector<int>> SC, vector<vector<int>> d, vector<int> L, vector<int> h, int u, int f, int C) {
+	/*
+
+
+
+	C : capacité de prodution
+	*/
+
+	int a = 2; //inutile
+
 
 	//Le LSP pour l'heuristique en CPLEX
-    std::cout << "Hello World!\n";
-
 	//ça ce sera donné en entrée du problème
-	vector<vector<int>> SC;
-	vector<vector<int>> d;
+	//vector<vector<int>> SC;
+	//vector<vector<int>> d;
 	vector<int> M; //défini dans le papier, 
-	vector<int> L;
-	vector<int> h;
-	int u;
-	int f;
+	//vector<int> L;
+	//vector<int> h;
+	//int u;
+	//int f;
 
 
 	//////////////
@@ -52,8 +58,25 @@ int main()
 	int n = 10;
 	int l = 10;
 
+
+	// c'est pas une var, mais je le définis ici :
+	M.resize(l + 1);
+
+	for (int t = 0; t <= l; t++) {
+
+		int sum = 0;
+
+		for (int j = t; j <= l; j++) {
+			for (int i = 1; i <= n; i++) {
+				sum += d[i][j];
+			}
+		}
+
+		M[t] = min(C, sum);
+	}
+
 	vector<IloNumVar> p;
-	p.resize(l+1);
+	p.resize(l + 1);
 	for (int i = 0; i < l; i++) {
 		p[i] = IloNumVar(env, 0.0, IloInfinity, ILOINT);
 		ostringstream varname;
@@ -63,7 +86,7 @@ int main()
 	}
 
 	vector<IloNumVar> y;
-	y.resize(l+1);
+	y.resize(l + 1);
 	for (int i = 0; i < l; i++) {
 		y[i] = IloNumVar(env, 0.0, 1.0, ILOINT);
 		ostringstream varname;
@@ -74,9 +97,9 @@ int main()
 
 	//I[N][T]
 	vector<vector<IloNumVar>> I;
-	I.resize(n+1);
+	I.resize(n + 1);
 	for (int i = 0; i < n; i++) {
-		I[i].resize(l+1);
+		I[i].resize(l + 1);
 		for (int j = 0; j < l; j++) {
 			I[i][j] = IloNumVar(env, 0.0, IloInfinity, ILOINT);
 			ostringstream varname;
@@ -88,9 +111,9 @@ int main()
 
 	//q[N][T]
 	vector<vector<IloNumVar>> q;
-	q.resize(n+1);
+	q.resize(n + 1);
 	for (int i = 0; i < n; i++) {
-		q[i].resize(l+1);
+		q[i].resize(l + 1);
 		for (int j = 0; j < l; j++) {
 			q[i][j] = IloNumVar(env, 0.0, IloInfinity, ILOINT);
 			ostringstream varname;
@@ -141,7 +164,7 @@ int main()
 	for (int t = 1; t <= l; t++) {
 		for (int i = 1; i <= n; i++) {
 			IloExpr cst(env);
-			cst += I[i][t - 1] + q[i][t] - I[i][t];	
+			cst += I[i][t - 1] + q[i][t] - I[i][t];
 			CC.add(cst == d[i][t]);
 			ostringstream cstname;
 			cstname.str("");
@@ -154,7 +177,7 @@ int main()
 	//contrainte 3 : 
 	for (int t = 1; t <= l; t++) {
 		IloExpr cst(env);
-		cst += p[t]/y[t];
+		cst += p[t] / y[t];
 		CC.add(cst <= M[t]);
 		ostringstream cstname;
 		cstname.str("");
@@ -208,7 +231,7 @@ int main()
 			nbcst++;
 		}
 	}
-	
+
 	model.add(CC);
 
 	//////////////
@@ -221,7 +244,7 @@ int main()
 	for (k = 0; k < K; k++)
 		obj.setLinearCoef(w[k], 1.0);
 	*/
-	
+
 	IloObjective obj = IloAdd(model, IloMinimize(env, 0.0));
 
 	for (int t = 1; t <= l; t++) {
@@ -244,6 +267,14 @@ int main()
 	//////////
 
 	IloCplex cplex(model);
+}
+
+
+
+int main()
+{
+
+
 }
 
 // Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
