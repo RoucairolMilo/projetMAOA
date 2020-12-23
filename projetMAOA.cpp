@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <tuple>
 
 #include <algorithm>
 
@@ -23,156 +24,56 @@ ILOSTLBEGIN
 //mettre tout ça dans un autre fichier après
 // il faudra aussi modifier les entrées et sorties pour que ça marche bien avec les fonctions de lecture d'instances
 
-IloNum solveVRPMTZHeuristicPart1(vector<int> Cli, int m, vector<int> d, int Q, vector<vector<int>> cij) {
-	/*
-	Cli la list des clients, peut être leur coordonnées plutot ?
-	
-	
-	*/
-	//////////////
-	//////  CPLEX INITIALIZATION
-	//////////////
 
-	IloEnv   env;
-	IloModel model(env);
-	IloRangeArray c(env);
+void heuriLoop(int maxIteration, int n, int t) {
 
-	////////////////////////
-	//////  VAR
-	////////////////////////
-	ostringstream cstname;
 
-	//tous les arcs entre tous les clients et le productuer
-	vector<vector<IloNumVar>> x;
-	x.resize(Cli.size());
-	for (unsigned i = 0; i < Cli.size(); i++) {
-		x[i].resize(Cli.size());
-		for (unsigned j = 0; j < Cli.size(); j++) {
-			if (i == j) {
-				//pour s'assurer que l'arête sur soi ne serve à rien
-				x[i][j] = IloNumVar(env, 0.0, 0.0, ILOINT);
-			}
-			else {
-				x[i][j] = IloNumVar(env, 0.0, 1, ILOINT);
-			}
-			cstname.str("");
-			cstname << "x" << i << "_" << j;
-			x[i][j].setName(cstname.str().c_str());
+	//ce serait bien qu'on passe juste un objet de type instancee en entrée pour éviter d'avoir 10 000 varialbes
+
+	//initialisation
+	vector<vector<int>> SC;
+	SC.resize(n);
+	for (int i = 0; i < n; i++) {
+		SC[i].resize(t);
+		for (int t = 0; t < l; t++) {
+			SC[i][t] = c[0][i] + c[i][0];
 		}
 	}
 
-	vector<IloNumVar> w;
-	w.resize(Cli.size());
-	for (unsigned i = 0; i < Cli.size(); i++) {
-		w[i] = IloNumVar(env, 0, Q, ILOFLOAT);
-		ostringstream cstname;
-		cstname.str("");
-		cstname << "w" << i;
-		w[i].setName(cstname.str().c_str());
+
+
+
+	iter = 0;
+	while (iter < maxIteration) {
+
+		var = solveLSPHeuristicPart1(SC, d, L, h, u, f, C);
+		//on veut p, I et q
+
+
+		solveVRPMTZHeuristicPart1(Cli, m, d, Q, cij);
+
+
+
+
+		iter++;
 	}
 
-	//////////////
-	//////  CST
-	//////////////
-
-	IloRangeArray CC(env);
-	int nbcst = 0;
-
-	//contrainte 6 (numérotés par rapport au sujet)
-	IloExpr c6(env);
-	for (unsigned j = 1; j < Cli.size(); j++)
-		c6 += x[0][j];
-	CC.add(c6 <= m);
-	cstname.str("");
-	cstname << "Cst_6";
-	CC[nbcst].setName(cstname.str().c_str());
-	nbcst++;
-
-	//contrainte 7
-	IloExpr c7(env);
-	for (unsigned j = 1; j < Cli.size(); j++)
-		c7 += x[j][0];
-	CC.add(c7 <= m);
-	cstname.str("");
-	cstname << "Cst_7";
-	CC[nbcst].setName(cstname.str().c_str());
-	nbcst++;
-
-	//contrainte 8
-	for (unsigned i = 1; i < Cli.size(); i++) {
-		IloExpr c8(env);
-		for (unsigned j = 1; j < Cli.size(); j++)
-			c8 += x[i][j];
-		CC.add(c8 <= 1);
-		cstname.str("");
-		cstname << "Cst_8col_" << i;
-		CC[nbcst].setName(cstname.str().c_str());
-		nbcst++;
-	}
-
-	//contrainte 9, presque pareil
-	for (unsigned i = 1; i < Cli.size(); i++) {
-		IloExpr c9(env);
-		for (unsigned j = 1; j < Cli.size(); j++)
-			c9 += x[j][i];
-		CC.add(c9 <= 1);
-		cstname.str("");
-		cstname << "Cst_9col_" << i;
-		CC[nbcst].setName(cstname.str().c_str());
-		nbcst++;
-	}
-
-	//contrainte 10 
-	for (unsigned i = 1; i < Cli.size(); i++) {
-		
-		for (unsigned j = 1; j < Cli.size(); j++) {
-			IloExpr c10(env);
-			c10 += w[i] - w[j] - (Q - d[i]) * x[i][j];
-			CC.add(c10 >= -Q);
-			ostringstream cstname;
-			cstname.str("");
-			cstname << "Cst_11col_" << i << "_line_" << j;
-			CC[nbcst].setName(cstname.str().c_str());
-			nbcst++;
-		}
-	}
-
-	//////////////
-	////// OBJ
-	//////////////
-
-
-	IloObjective obj = IloAdd(model, IloMinimize(env, 0.0));
-
-	for (unsigned i = 0; i < Cli.size(); i++) {
-		for (unsigned j = 0; j < Cli.size(); j++) {
-			obj.setLinearCoef(x[i][j], cij[i][j]);
-		}
-	}
-
-	///////////
-	//// RESOLUTION
-	//////////
-
-	IloCplex cplex(model);
-
-	cplex.solve();
-	std::cout << cplex.getObjValue();
-
-	//TODO : return les valeurs dont on a besoin
-
-	return cplex.getObjValue(); // on doir aps retourner ça, mais plutot un paquet de valeurs (un vecteur de ilonum ?)
+	solveLSPHeuristicPart1
 }
 
 
-IloNum solveLSPHeuristicPart1(vector<vector<int>> SC, vector<vector<int>> d, vector<int> L, vector<int> h, int u, int f, int C) {
+std::tuple<vector<int>, vector<int>, vector<vector<int>>, vector<vector<int>>, vector<vector<int>>> solveLSPHeuristicPart1(vector<vector<int>> SC, vector<vector<int>> d, vector<int> L, vector<int> h, int u, int f, int C) {
 	/*
-
-
-
+	SC : cout de visite d'un revendeur i à un instant t
+	d : demande de chaque revendeur à chaque instant d[i][t]
+	L : limite de stockage chez le fournisseur (L[0]) et les revendeurs
+	h : cout de stockage unitaire chez les revendeurs
+	u : cout unitaire de production
+	f : cout fixe de production
 	C : capacité de prodution
 
-	Devra retourner un vecteur avec les variables plutot que la valeur optimisée seulement.
+	TODO : Devra retourner un vecteur avec les variables plutot que la valeur optimisée seulement.
+	return : p, y, I, q, z de la solution optimale dans un tuple
 	*/
 
 
@@ -418,9 +319,206 @@ IloNum solveLSPHeuristicPart1(vector<vector<int>> SC, vector<vector<int>> d, vec
 	cplex.solve();
 	std::cout << cplex.getObjValue();
 
-	//TODO : return les valeurs dont on a besoin
+	vector<int> resp;
+	vector<int> resy;
+	vector<vector<int>> resI;
+	vector<vector<int>> resq;
+	vector<vector<int>> resz;
 
-	return cplex.getObjValue(); // on doir aps retourner ça, mais plutot un paquet de valeurs
+	resp.resize(p.size());
+	resy.resize(y.size());
+	resI.resize(I.size());
+	resq.resize(q.size());
+	resz.resize(z.size());
+
+	for (int i = 0; i < p.size(); i++) {
+		resp[i] = cplex.getValue(p[i]);
+	}
+
+	for (int i = 0; i < y.size(); i++) {
+		resy[i] = cplex.getValue(y[i]);
+	}
+
+	for (int i = 0; i < I.size(); i++) {
+		resI[i].resize(I[i].size());
+		for(int j = 0; j < I[0].size)
+			resI[i][j] = cplex.getValue(I[i][j]);
+	}
+
+	for (int i = 0; i < q.size(); i++) {
+		resq[i].resize(q[i].size());
+		for (int j = 0; j < q[0].size)
+			resq[i][j] = cplex.getValue(q[i][j]);
+	}
+
+	for (int i = 0; i < z.size(); i++) {
+		resz[i].resize(z[i].size());
+		for (int j = 0; j < z[0].size)
+			resz[i][j] = cplex.getValue(z[i][j]);
+	}
+
+	return std::make_tuple(resp, resy, resI, resq, resz);
+}
+
+
+std::tuple<vector<int>, vector<vector<int>>> solveVRPMTZHeuristicPart1(vector<int> Cli, int m, vector<int> d, int Q, vector<vector<int>> cij) {
+	/*
+	Cli : la liste des clients, peut être leur coordonnées plutot ? sommets du graphe
+	m : le nombre de véhicules (nb de cycles max)
+	d :
+	Q : la quantité maximale livrable en une tournée il me semble ?
+	cij : cout de transport du sommet i à j cij[i][j]
+
+	return : x, w dans un tuple dans cet ordre
+	*/
+	//////////////
+	//////  CPLEX INITIALIZATION
+	//////////////
+
+	IloEnv   env;
+	IloModel model(env);
+	IloRangeArray c(env);
+
+	////////////////////////
+	//////  VAR
+	////////////////////////
+	ostringstream cstname;
+
+	//tous les arcs entre tous les clients et le productuer
+	vector<vector<IloNumVar>> x;
+	x.resize(Cli.size());
+	for (unsigned i = 0; i < Cli.size(); i++) {
+		x[i].resize(Cli.size());
+		for (unsigned j = 0; j < Cli.size(); j++) {
+			if (i == j) {
+				//pour s'assurer que l'arête sur soi ne serve à rien
+				x[i][j] = IloNumVar(env, 0.0, 0.0, ILOINT);
+			}
+			else {
+				x[i][j] = IloNumVar(env, 0.0, 1, ILOINT);
+			}
+			cstname.str("");
+			cstname << "x" << i << "_" << j;
+			x[i][j].setName(cstname.str().c_str());
+		}
+	}
+
+	vector<IloNumVar> w;
+	w.resize(Cli.size());
+	for (unsigned i = 0; i < Cli.size(); i++) {
+		w[i] = IloNumVar(env, 0, Q, ILOFLOAT);
+		ostringstream cstname;
+		cstname.str("");
+		cstname << "w" << i;
+		w[i].setName(cstname.str().c_str());
+	}
+
+	//////////////
+	//////  CST
+	//////////////
+
+	IloRangeArray CC(env);
+	int nbcst = 0;
+
+	//contrainte 6 (numérotés par rapport au sujet)
+	IloExpr c6(env);
+	for (unsigned j = 1; j < Cli.size(); j++)
+		c6 += x[0][j];
+	CC.add(c6 <= m);
+	cstname.str("");
+	cstname << "Cst_6";
+	CC[nbcst].setName(cstname.str().c_str());
+	nbcst++;
+
+	//contrainte 7
+	IloExpr c7(env);
+	for (unsigned j = 1; j < Cli.size(); j++)
+		c7 += x[j][0];
+	CC.add(c7 <= m);
+	cstname.str("");
+	cstname << "Cst_7";
+	CC[nbcst].setName(cstname.str().c_str());
+	nbcst++;
+
+	//contrainte 8
+	for (unsigned i = 1; i < Cli.size(); i++) {
+		IloExpr c8(env);
+		for (unsigned j = 1; j < Cli.size(); j++)
+			c8 += x[i][j];
+		CC.add(c8 <= 1);
+		cstname.str("");
+		cstname << "Cst_8col_" << i;
+		CC[nbcst].setName(cstname.str().c_str());
+		nbcst++;
+	}
+
+	//contrainte 9, presque pareil
+	for (unsigned i = 1; i < Cli.size(); i++) {
+		IloExpr c9(env);
+		for (unsigned j = 1; j < Cli.size(); j++)
+			c9 += x[j][i];
+		CC.add(c9 <= 1);
+		cstname.str("");
+		cstname << "Cst_9col_" << i;
+		CC[nbcst].setName(cstname.str().c_str());
+		nbcst++;
+	}
+
+	//contrainte 10 
+	for (unsigned i = 1; i < Cli.size(); i++) {
+
+		for (unsigned j = 1; j < Cli.size(); j++) {
+			IloExpr c10(env);
+			c10 += w[i] - w[j] - (Q - d[i]) * x[i][j];
+			CC.add(c10 >= -Q);
+			ostringstream cstname;
+			cstname.str("");
+			cstname << "Cst_11col_" << i << "_line_" << j;
+			CC[nbcst].setName(cstname.str().c_str());
+			nbcst++;
+		}
+	}
+
+	//////////////
+	////// OBJ
+	//////////////
+
+
+	IloObjective obj = IloAdd(model, IloMinimize(env, 0.0));
+
+	for (unsigned i = 0; i < Cli.size(); i++) {
+		for (unsigned j = 0; j < Cli.size(); j++) {
+			obj.setLinearCoef(x[i][j], cij[i][j]);
+		}
+	}
+
+	///////////
+	//// RESOLUTION
+	//////////
+
+	IloCplex cplex(model);
+
+	cplex.solve();
+	std::cout << cplex.getObjValue();
+
+	//TODO : return les valeurs dont on a besoin
+	vector<vector<int>> resx;
+	vector<int> resw;
+
+	resx.resize(x.size());
+	resw.resize(w.size());
+
+	for (int i = 0; i < w.size(); i++) {
+		resw[i] = cplex.getValue(w[i]);
+	}
+
+	for (int i = 0; i < x.size(); i++) {
+		resx[i].resize(x[i].size());
+		for (int j = 0; j < x[0].size)
+			resx[i][j] = cplex.getValue(x[i][j]);
+	}
+
+	return std::make_tuple(resx, resw);
 }
 
 
