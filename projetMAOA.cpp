@@ -18,7 +18,8 @@ using namespace std;
 
 typedef IloArray<IloNumVarArray> NumVarMatrix;
 
-ILOSTLBEGIN
+ILOSTLBEGIN
+
 
 //mettre tout ça dans un autre fichier après
 // il faudra aussi modifier les entrées et sorties pour que ça marche bien avec les fonctions de lecture d'instances
