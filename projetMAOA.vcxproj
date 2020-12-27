@@ -158,7 +158,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="projetMAOA.cpp" />
+    <ClCompile Include="code_approx\MAOA.cpp" />
+    <ClCompile Include="code_approx\PRP.cpp" />
+    <ClCompile Include="code_approx\SolApprochee.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="code_approx\PRP.h" />
+    <ClInclude Include="code_approx\SolApprochee.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

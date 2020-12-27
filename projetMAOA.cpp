@@ -521,14 +521,14 @@ std::tuple<vector<int>, vector<vector<int>>> solveVRPMTZHeuristicPart1(vector<in
 	return std::make_tuple(resx, resw);
 }
 
-
+/*
 
 int main()
 {
 
 	std::cout << "Hello World!";
 }
-
+*/
 // Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
 // Déboguer le programme : F5 ou menu Déboguer > Démarrer le débogage
 
